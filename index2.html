@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR Code Generator</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<style>
+    * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
+    }
+    body {
+        height: 100vh;
+        background: linear-gradient(#f3f3fb 50%, #377dff 50%);
+    }
+    .wrapper {
+        background-color: #ffffff;
+        padding: 5em 4em;
+        position: absolute;
+        width: 31.25em;
+        transform: translate(-50%, -50%);
+        top: 50%;
+        left: 50%;
+        border-radius: 0.6em;
+        box-shadow: 0 1.5em 3em rgba(3, 21, 55, 0.3);
+    }
+    #userInput {
+        width: 100%;
+        border: none;
+        border-bottom: 2px solid #000000;
+        padding: 0.5em 1em;
+        font-size: 1em;
+        outline: none;
+    }
+    .options {
+        margin-top: 1em;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    select {
+        appearance: none;
+        width: 8em;
+        padding: 0.45em 0.9em;
+        font-size: 1.25em;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        background-color: #377dff;
+        border: none;
+        color: #ffffff;
+        background-repeat: no-repeat;
+        background-size: 1.1em;
+        background-position: 6em;
+        outline: none;
+        border-radius: 0.3em;
+    }
+    select::-ms-expand {
+        display: none;
+    }
+    select option {
+        background-color: #ffffff;
+        color: #377dff;
+        letter-spacing: 0.06em;
+        font-weight: 400;
+        font-size: 1.12em;
+    }
+    .selected {
+        display: none;
+    }
+    .color-inp {
+        appearance: none;
+        background-color: transparent;
+        width: 3.1em;
+        height: 3.4em;
+        outline: none;
+        border: none;
+    }
+    .color-inp::-webkit-color-swatch {
+        border-radius: 0.3em;
+        border: 0.18em solid #191f3f;
+    }
+    .color-inp::-moz-color-swatch {
+        border-radius: 0.3em;
+        border: 0.18em solid #191f3f;
+    }
+    .box {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+    }
+    .box button,
+    .box a {
+        font-size: 1em;
+        padding: 0.8em 2em;
+        border-radius: 0.5em;
+        margin-top: 2em;
+    }
+    .box button:disabled {
+        background-color: transparent;
+        color: #a3aab6;
+        border: 0.18em solid #a3aab6;
+    }
+    .box button {
+        background-color: transparent;
+        color: #377dff;
+        border: 0.18em solid #377dff;
+    }
+    .box a {
+        background-color: #377dff;
+        color: #ffffff;
+        text-decoration: none;
+        border: 0.18em solid #377dff;
+    }
+    .container {
+        display: flex;
+        justify-content: center;
+        margin-top: 1.8em;
+        flex-direction: column;
+        align-items: center;
+    }
+    .hide {
+        display: none;
+    }
+</style>
+<body>
+<div class="wrapper">
+    <select id="qrType">
+        <option value="text">Text/URL</option>
+        <option value="wifi">WiFi</option>
+        <option value="vcard">vCard</option>
+        <option value="image">Image URL</option>
+        <option value="video">Video URL</option>
+    </select>
+    <input type="text" id="userInput" placeholder="Enter some text or URL" />
+    <div class="options">
+        <select class="sizeOptions">
+            <option value="100" selected>100 x 100</option>
+            <option value="200">200 x 200</option>
+            <option value="300">300 x 300</option>
+        </select>
+        <input type="color" id="BGColor" class="color-inp" />
+        <input type="color" id="FGColor" class="color-inp" />
+    </div>
+    <div class="options">
+        <input type="text" id="customLabel" placeholder="Enter custom label (optional)" />
+        <select id="downloadFormat">
+            <option value="png" selected>PNG</option>
+            <option value="jpeg">JPEG</option>
+            <option value="webp">WEBP</option>
+            <option value="jpg">JPG</option>
+            <option value="svg">SVG</option>
+        </select>
+    </div>
+    <div class="box">
+        <button id="submit" disabled>Generate</button>
+        <a href="#" id="download">Download</a>
+    </div>
+    <div class="container">
+        <div id="qrCodeContainer"></div>
+        <div id="labelContainer"></div>
+    </div>
+</div>
+<script>
+    const qrType = document.getElementById("qrType");
+    const container = document.getElementById("qrCodeContainer");
+    const labelContainer = document.getElementById("labelContainer");
+    const userInput = document.getElementById("userInput");
+    const submitBtn = document.getElementById("submit");
+    const downloadBtn = document.getElementById("download");
+    const sizeOptions = document.querySelector(".sizeOptions");
+    const BGColor = document.getElementById("BGColor");
+    const FGColor = document.getElementById("FGColor");
+    const customLabel = document.getElementById("customLabel");
+    const downloadFormat = document.getElementById("downloadFormat");
+    let QR_Code;
+    let sizeChoice, BGColorChoice, FGColorChoice;
+
+    // Set size
+    sizeOptions.addEventListener("change", () => {
+        sizeChoice = sizeOptions.value;
+    });
+
+    // Set background color
+    BGColor.addEventListener("input", () => {
+        BGColorChoice = BGColor.value;
+    });
+
+    // Set foreground color
+    FGColor.addEventListener("input", () => {
+        FGColorChoice = FGColor.value;
+    });
+
+    // Handle QR type selection
+    qrType.addEventListener("change", () => {
+        userInput.placeholder = `Enter ${qrType.options[qrType.selectedIndex].text}`;
+    });
+
+    submitBtn.addEventListener("click", async () => {
+        container.innerHTML = "";
+        labelContainer.innerHTML = "";
+
+        // Format the input based on the selected QR type
+        let qrData = userInput.value;
+        switch (qrType.value) {
+            case "wifi":
+                // Example: "WIFI:T:WPA;S:MySSID;P:MyPassword;;"
+                qrData = `WIFI:T:WPA;S:${userInput.value.split(';')[0]};P:${userInput.value.split(';')[1]};;`;
+                break;
+            case "vcard":
+                // Example: "BEGIN:VCARD\nVERSION:3.0\nN:LastName;FirstName\nORG:Company\nTEL:+1234567890\nEMAIL:email@example.com\nEND:VCARD"
+                qrData = `BEGIN:VCARD\nVERSION:3.0\nN:${userInput.value.split(';')[0]};${userInput.value.split(';')[1]}\nORG:${userInput.value.split(';')[2]}\nTEL:${userInput.value.split(';')[3]}\nEMAIL:${userInput.value.split(';')[4]}\nEND:VCARD`;
+                break;
+            // Other cases for image and video URLs can be added similarly
+        }
+
+        // QR code generation
+        QR_Code = await new QRCode(container, {
+            text: qrData,
+            width: sizeChoice,
+            height: sizeChoice,
+            colorDark: FGColorChoice,
+            colorLight: BGColorChoice,
+        });
+
+        // Add custom label if provided
+        if (customLabel.value.trim()) {
+            labelContainer.innerText = customLabel.value.trim();
+        }
+
+        // Set URL for download
+        const canvas = container.querySelector("canvas");
+        let mimeType = "image/png";
+        switch (downloadFormat.value) {
+            case "jpeg":
+                mimeType = "image/jpeg";
+                break;
+            case "svg":
+                mimeType = "image/svg+xml";
+                break;
+        }
+        const src = canvas.toDataURL(mimeType);
+        downloadBtn.href = src;
+        downloadBtn.download = `${userInput.value}.${downloadFormat.value}`;
+        downloadBtn.classList.remove("hide");
+    });
+
+    userInput.addEventListener("input", () => {
+        if (userInput.value.trim().length < 1) {
+            submitBtn.disabled = true;
+            downloadBtn.href = "";
+            downloadBtn.classList.add("hide");
+        } else {
+            submitBtn.disabled = false;
+        }
+    });
+
+    window.onload = () => {
+        container.innerHTML = "";
+        sizeChoice = 100;
+        sizeOptions.value = 100;
+        userInput.value = "";
+        BGColor.value = BGColorChoice = "#ffffff";
+        FGColor.value = FGColorChoice = "#377dff";
+        downloadBtn.classList.add("hide");
+        submitBtn.disabled = true;
+    };
+</script>
+</body>
+<footer>
+    <center><p>If you do any changes hit the "Generate" button to see the changes</p></center>
+</footer>
+</html>
+
